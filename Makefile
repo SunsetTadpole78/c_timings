@@ -10,14 +10,18 @@ FILES =	activation.c			\
 		timings.c				\
 		time.c					\
 		libft/ft_ftoa.c			\
+		libft/ft_ltoa.c			\
 		libft/ft_putnbr_fd.c	\
 		libft/ft_strdup.c		\
 		libft/ft_strlen.c		\
+		libft/ft_timestamp.c	\
 		libft/ft_timestamp_us.c	\
 		libft/ft_log.c			\
+		libft/ft_llog.c			\
 		libft/ft_round.c		\
 		libft/ft_strjoin.c		\
-		libft/ft_strncmp.c
+		libft/ft_strncmp.c		\
+		libft/ft_pathjoin.c
 
 OFILES = $(FILES:%.c=$(OBJS)/%.o)
 
@@ -30,9 +34,6 @@ $(NAME): $(OFILES)
 	@echo "Compiling..."
 	ar cr $(NAME) $(OFILES)
 	@echo "Compilation done."
-
-$(LIBFTA):
-	make -C $(LIBFT) bonus > /dev/null
 
 clean:
 	@echo "Remove objects files..."

@@ -6,7 +6,7 @@
 /*   By: lroussel <lroussel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:31:04 by lroussel          #+#    #+#             */
-/*   Updated: 2025/05/13 10:00:22 by lroussel         ###   ########.fr       */
+/*   Updated: 2025/05/13 11:06:51 by lroussel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include <unistd.h>
 # include <stdlib.h>
 # include <stdio.h>
+# include <fcntl.h>
 
 # define TIMINGS_HEADER \
 	"=============================== Timings ===============================\n"
@@ -48,12 +49,16 @@ typedef struct s_timings
 size_t		ft_strlen(const char *s);
 char		*ft_strdup(const char *s);
 int			ft_strncmp(const char *s1, const char *s2, size_t n);
+long long	ft_timestamp(void);
 long long	ft_timestamp_us(void);
 size_t		ft_log(int nb, int base);
+size_t		ft_llog(long nb, int base);
 float		ft_round(float v, int precision);
 char		*ft_ftoa(float v);
+char		*ft_ltoa(long v);
 char		*ft_strjoin(const char *s1, const char *s2);
 void		ft_putnbr_fd(int n, int fd);
+char		*ft_pathjoin(char const *path1, char const *path2);
 
 void		enable_timings(void);
 int			is_timings_enabled(void);
@@ -63,7 +68,7 @@ void		stop_timing(t_session *session);
 
 t_timings	*get_timings(void);
 
-void		report_timings(char *filename);
+void		report_timings(char *dir_path);
 
 void		fix_time(char **time);
 char		*execution_time(long long value);

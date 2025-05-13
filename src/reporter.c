@@ -6,11 +6,27 @@
 /*   By: lroussel <lroussel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/12 20:10:27 by lroussel          #+#    #+#             */
-/*   Updated: 2025/05/12 20:36:20 by lroussel         ###   ########.fr       */
+/*   Updated: 2025/05/13 12:14:34 by lroussel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "c_timings.h"
+
+static int	create_log_file(char *dir_path)
+{
+	char	*value;
+	char	*name;
+	char	*path;
+	int		fd;
+
+	value = ft_ltoa(ft_timestamp());
+	name = ft_strjoin("timing-", value);
+	path = ft_pathjoin(dir_path, name);
+	free(name);
+	fd = open(path, O_CREAT | O_WRONLY, 0644);
+	free(path);
+	return (fd);
+}
 
 static void	write_timing_data(t_timing *timing, long long time, int fd)
 {
@@ -42,22 +58,10 @@ static void	write_sample_time(long long time, int fd)
 	write(fd, "\n", 1);
 }
 
-void	report_timings(char *filename)
+static void	write_timings(t_timing *cur, long long time, int fd)
 {
-	t_timings	*timings;
-	long long	time;
-	t_timing	*cur;
-	int			fd;
 	t_timing	*tmp;
 
-	if (!is_timings_enabled())
-		return ;
-	(void)filename;
-	fd = 0;
-	timings = get_timings();
-	time = ft_timestamp_us() - timings->started;
-	write_sample_time(time, fd);
-	cur = timings->timings;
 	while (cur)
 	{
 		while (cur->sessions)
@@ -68,5 +72,24 @@ void	report_timings(char *filename)
 		free(tmp->id);
 		free(tmp);
 	}
+}
+
+void	report_timings(char *dir_path)
+{
+	t_timings	*timings;
+	long long	time;
+	int			fd;
+
+	if (!is_timings_enabled())
+		return ;
+	fd = 0;
+	if (dir_path)
+		fd = create_log_file(dir_path);
+	timings = get_timings();
+	time = ft_timestamp_us() - timings->started;
+	write_sample_time(time, fd);
+	write_timings(timings->timings, time, fd);
 	free(timings);
+	if (fd > 0)
+		close(fd);
 }

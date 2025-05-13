@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<title>C Timings Viewer</title>
+		<style>
+			body {
+			font-family: sans-serif;
+			padding: 20px;
+			background-color: #f4f4f4;
+			}
+			textarea {
+			width: 80%;
+			height: 150px;
+			font-family: monospace;
+			margin-top: -10px;
+			margin-bottom: 20px;
+			}
+			#resultTable {
+			border-collapse: collapse;
+			width: 100%;
+			background-color: white;
+			}
+			#resultTable th, td {
+			border: 1px solid #ccc;
+			padding: 8px;
+			text-align: left;
+			}
+			#resultTable th {
+			background-color: #eee;
+			}
+			#sampleTime {
+				text-align: center;
+				margin: 10px 0;
+			}
+			footer {
+				position: fixed;
+				bottom: 0px;
+				right: 20px;
+				text-align: right;
+				background-color: #f4f4f4;
+				width: calc(100% - 40px);
+			}
+			hr {
+				border: none;
+				border-top: 1px solid #ccc;
+			}
+			body hr {
+				margin-top: 40px;
+				margin-bottom: 40px;
+			}
+			footer hr {
+				margin-top: 0;
+				margin-bottom: 5px;
+			}
+
+		</style>
+	</head>
+	<body>
+		<center>
+			<h1>C Timings Viewer</h1>
+			<p>Paste here your timings</p>
+			<textarea id="input"></textarea>
+			<br>
+			<button onclick="parseTimings()">Analyze</button>
+		</center>
+		<hr>
+		<div id="sampleTime"></div>
+		<table id="resultTable">
+			<thead>
+				<tr>
+					<th>Event</th>
+					<th>% Total</th>
+					<th>Time ÷ Count</th>
+					<th>Count</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+		<script>
+			function parseTimings() {
+				const input = document.getElementById('input').value.trim();
+				const lines = input.split('\n');
+				const tbody = document.querySelector('#resultTable tbody');
+				const sampleDiv = document.getElementById('sampleTime');
+				tbody.innerHTML = '';
+				sampleDiv.textContent = ``;
+				if (lines.length < 2) {
+					alert('Invalid timings.');
+					return;
+				}
+				const sampleTime = lines[0];
+				sampleDiv.innerHTML = `<strong>Sample Time:</strong> ${sampleTime}`;
+				for (let i = 1; i < lines.length; i++) {
+					const parts = lines[i].trim().split(/\s+/);
+					if (parts.length >= 4) {
+						const row = document.createElement('tr');
+						parts.forEach((val, idx) => {
+							const cell = document.createElement('td');
+							cell.textContent = val;
+							row.appendChild(cell);
+						});
+						tbody.appendChild(row);
+					}
+				}
+			}
+		</script>
+	</body>
+	<footer>
+		<hr>
+		<h4>~Sunset</h4>
+	</footer>
+</html>
+
