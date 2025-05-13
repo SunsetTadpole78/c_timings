@@ -4,8 +4,20 @@ INCLUDE = include
 SRC = src
 OBJS = objs
 
-FILES = timings.c	\
-	utils.c
+FILES =	activation.c			\
+		reporter.c				\
+		sessions.c				\
+		timings.c				\
+		time.c					\
+		libft/ft_ftoa.c			\
+		libft/ft_putnbr_fd.c	\
+		libft/ft_strdup.c		\
+		libft/ft_strlen.c		\
+		libft/ft_timestamp_us.c	\
+		libft/ft_log.c			\
+		libft/ft_round.c		\
+		libft/ft_strjoin.c		\
+		libft/ft_strncmp.c
 
 OFILES = $(FILES:%.c=$(OBJS)/%.o)
 
@@ -33,7 +45,7 @@ fclean: clean
 
 $(OBJS)/%.o: $(SRC)/%.c
 	mkdir -p $(dir $@)
-	$(COMPILATOR) $(FLAGS) $< -c -o $@ -I $(INCLUDE)
+	$(COMPILATOR) $(FLAGS) $< -c -o $@ -I $(INCLUDE) -g
 
 re: fclean $(NAME)
 

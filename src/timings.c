@@ -6,13 +6,13 @@
 /*   By: lroussel <lroussel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:30:44 by lroussel          #+#    #+#             */
-/*   Updated: 2025/05/06 16:09:40 by lroussel         ###   ########.fr       */
+/*   Updated: 2025/05/13 09:54:00 by lroussel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "c_timings.h"
 
-static t_timings	*get_timings(void)
+t_timings	*get_timings(void)
 {
 	static t_timings	*timings = NULL;
 
@@ -22,57 +22,19 @@ static t_timings	*get_timings(void)
 		if (!timings)
 			return (NULL);
 		timings->timings = NULL;
+		timings->started = ft_timestamp_us();
 	}
 	return (timings);
 }
 
-static t_timing	*init_timing(t_timing **timings, char *id)
-{
-	t_timing	*timing;
-
-	timing = malloc(sizeof(t_timing));
-	if (!timing)
-		return (NULL);
-	timing->id = ft_strdup(id);
-	timing->total_time = 0l;
-	timing->called = 0;
-	if (*timings)
-		timing->next = *timings;
-	*timings = timing;
-	return (timing);
-}
-
-static t_session	*create_session(t_timing **timings, char *id,
-	t_timing *timing)
-{
-	t_session	*session;
-
-	if (!timing)
-	{
-		timing = init_timing(timings, id);
-		if (!timing)
-			return (NULL);
-	}
-	session = malloc(sizeof(t_session));
-	if (!session)
-		return (NULL);
-	session->started = ft_timestamp();
-	session->timing = timing;
-	session->next = timing->sessions;
-	if (!session->next)
-		session->id = 0;
-	else
-		session->id = session->next->id + 1;
-	timing->sessions = session;
-	return (session);
-}
-
-t_session	*start_timings(char *id)
+t_session	*start_timing(char *id)
 {
 	t_timings	*timings;
 	t_timing	*cur;
 	t_timing	*timing;
 
+	if (!is_timings_enabled())
+		return (NULL);
 	timings = get_timings();
 	cur = timings->timings;
 	timing = NULL;
@@ -83,11 +45,44 @@ t_session	*start_timings(char *id)
 			timing = cur;
 			break ;
 		}
+		cur = cur->next;
 	}
 	return (create_session(&timings->timings, id, timing));
 }
 
-void	stop_timings(char *id)
+static int	check_sessions(int id, t_session *cur, t_session **prev)
 {
-	(void)id;
+	while (cur)
+	{
+		if (cur->id == id)
+			break ;
+		*prev = cur;
+		cur = cur->next;
+	}
+	return (cur != NULL);
+}
+
+void	stop_timing(t_session *session)
+{
+	t_timing	*timing;
+	t_session	*prev;
+	long long	time;
+
+	time = ft_timestamp_us();
+	if (session == NULL)
+		return ;
+	timing = session->timing;
+	prev = NULL;
+	if (!check_sessions(session->id, timing->sessions, &prev))
+	{
+		free(session);
+		return ;
+	}
+	timing->called++;
+	timing->total_time += time - session->started;
+	free(session);
+	if (prev)
+		prev->next = prev->next->next;
+	else
+		timing->sessions = NULL;
 }

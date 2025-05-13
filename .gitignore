@@ -2,3 +2,5 @@
 **/*.a
 **/*.sw*
 c_timings.a
+a.out
+main.c
