@@ -59,11 +59,20 @@
 	<body>
 		<center>
 			<h1>C Timings Viewer</h1>
-			<p>Paste here your timings</p>
-			<textarea id="input"></textarea>
-			<br>
-			<button onclick="parseTimings()">Analyze</button>
 		</center>
+		<table>
+			<tr>
+				<th>
+					<center>
+						<p>Paste here your timings</p>
+						<textarea id="input"></textarea>
+						<br>
+						<button onclick="parseTimings()">Analyze</button>
+					</center>
+				</th>
+			</tr>
+		</table>
+		
 		<hr>
 		<div id="sampleTime"></div>
 		<table id="resultTable">
@@ -78,6 +87,32 @@
 			<tbody></tbody>
 		</table>
 		<script>
+			function convertNanoseconds(value) {
+				const ns = Number(value);
+				let res = ns;
+				let unit = "μs";
+
+				if (res > 86400000000.0) {
+					res /= 86400000000.0;
+					unit = "d";
+				} else if (res > 3600000000.0) {
+					res /= 3600000000.0;
+					unit = "h";
+				} else if (res > 60000000.0) {
+					res /= 60000000.0;
+					unit = "m";
+				} else if (res > 1000000.0) {
+					res /= 1000000.0;
+					unit = "s";
+				} else if (res > 1000.0) {
+					res /= 1000.0;
+					unit = "ms";
+				} else {
+					unit = "μs";
+				}
+
+				return `${res.toFixed(2)}${unit}`;
+			}
 			function parseTimings() {
 				const input = document.getElementById('input').value.trim();
 				const lines = input.split('\n');
@@ -85,21 +120,34 @@
 				const sampleDiv = document.getElementById('sampleTime');
 				tbody.innerHTML = '';
 				sampleDiv.textContent = ``;
+
 				if (lines.length < 2) {
 					alert('Invalid timings.');
 					return;
 				}
-				const sampleTime = lines[0];
-				sampleDiv.innerHTML = `<strong>Sample Time:</strong> ${sampleTime}`;
+
+				const sampleTime = parseInt(lines[0]);
+				sampleDiv.innerHTML = `<strong>Sample Time:</strong> ${convertNanoseconds(sampleTime)}`;
+
 				for (let i = 1; i < lines.length; i++) {
 					const parts = lines[i].trim().split(/\s+/);
-					if (parts.length >= 4) {
+					if (parts.length === 3) {
+						const event = parts[0];
+						const totalTime = parseInt(parts[1]);
+						const count = parseInt(parts[2]);
+
+						const percent = ((totalTime / sampleTime) * 100).toFixed(2) + '%';
+						const timePerCall = convertNanoseconds(totalTime / count);
+
 						const row = document.createElement('tr');
-						parts.forEach((val, idx) => {
+
+						[row, percent, timePerCall, count].forEach((val) => {
 							const cell = document.createElement('td');
 							cell.textContent = val;
 							row.appendChild(cell);
 						});
+
+						row.firstChild.textContent = event;
 						tbody.appendChild(row);
 					}
 				}

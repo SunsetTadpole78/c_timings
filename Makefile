@@ -8,7 +8,6 @@ FILES =	activation.c			\
 		reporter.c				\
 		sessions.c				\
 		timings.c				\
-		time.c					\
 		libft/ft_ftoa.c			\
 		libft/ft_ltoa.c			\
 		libft/ft_putnbr_fd.c	\
