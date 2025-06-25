@@ -20,7 +20,7 @@ static int	create_log_file(char *dir_path)
 	int		fd;
 
 	value = ft_ltoa(ft_timestamp());
-	name = ft_strjoin("timing-", value);
+	name = ft_strjoin(value, ".ctmg");
 	path = ft_pathjoin(dir_path, name);
 	free(name);
 	fd = open(path, O_CREAT | O_WRONLY, 0644);
@@ -32,9 +32,9 @@ static void	write_timing_data(t_timing *timing, int fd)
 {
 	write(fd, timing->id, ft_strlen(timing->id));
 	write(fd, "\t", 1);
-	ft_putnbr_fd(timing->total_time, 1);
+	ft_putnbr_fd(timing->total_time, fd);
 	write(fd, "\t", 1);
-	ft_putnbr_fd(timing->called, 1);
+	ft_putnbr_fd(timing->called, fd);
 	write(fd, "\n", 1);
 }
 
@@ -42,8 +42,8 @@ static void	write_timings(t_timing *cur, long long time, int fd)
 {
 	t_timing	*tmp;
 
-	ft_putnbr_fd(time, 1);
-	write(1, "\n", 1);
+	ft_putnbr_fd(time, fd);
+	write(fd, "\n", 1);
 	while (cur)
 	{
 		while (cur->sessions)

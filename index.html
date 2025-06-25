@@ -1,162 +1,234 @@
 <!DOCTYPE html>
-<html lang="fr">
-	<head>
-		<meta charset="UTF-8">
-		<title>C Timings Viewer</title>
-		<style>
-			body {
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>C Timings Viewer</title>
+	<style>
+		body {
 			font-family: sans-serif;
 			padding: 20px;
+			height: 80%;
 			background-color: #f4f4f4;
-			}
-			textarea {
-			width: 80%;
+		}
+
+		textarea {
+			width: 400px;
 			height: 150px;
 			font-family: monospace;
-			margin-top: -10px;
 			margin-bottom: 20px;
-			}
-			#resultTable {
+		}
+
+		#resultTable {
 			border-collapse: collapse;
 			width: 100%;
 			background-color: white;
-			}
-			#resultTable th, td {
+		}
+
+		#resultTable th, #resultTable td {
 			border: 1px solid #ccc;
 			padding: 8px;
 			text-align: left;
-			}
-			#resultTable th {
+		}
+
+		#resultTable th {
 			background-color: #eee;
-			}
-			#sampleTime {
-				text-align: center;
-				margin: 10px 0;
-			}
-			footer {
-				position: fixed;
-				bottom: 0px;
-				right: 20px;
-				text-align: right;
-				background-color: #f4f4f4;
-				width: calc(100% - 40px);
-			}
-			hr {
-				border: none;
-				border-top: 1px solid #ccc;
-			}
-			body hr {
-				margin-top: 40px;
-				margin-bottom: 40px;
-			}
-			footer hr {
-				margin-top: 0;
-				margin-bottom: 5px;
-			}
+		}
 
-		</style>
-	</head>
-	<body>
-		<center>
-			<h1>C Timings Viewer</h1>
-		</center>
-		<table>
+		#sampleTime {
+			text-align: center;
+			margin: 10px 0;
+		}
+
+		footer {
+			bottom: 0px;
+			right: 20px;
+			text-align: right;
+			background-color: #f4f4f4;
+			width: calc(100% - 40px);
+		}
+
+		hr {
+			border: none;
+			border-top: 1px solid #ccc;
+			margin: 40px 0;
+		}
+
+		#inputImportWrapper {
+			display: flex;
+			justify-content: center;
+			margin-bottom: 30px;
+		}
+
+		.input-block {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.button-group {
+			display: flex;
+			justify-content: center;
+			gap: 10px;
+			margin-top: 10px;
+		}
+
+		button {
+			background-color: #4CAF50;
+			color: white;
+			border: none;
+			border-radius: 4px;
+			padding: 8px 16px;
+			cursor: pointer;
+			font-size: 14px;
+			transition: background-color 0.3s;
+		}
+
+		button:hover {
+			background-color: #45a049;
+		}
+
+		#fileInput {
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<center>
+		<h1>C Timings Viewer</h1>
+		<div id="inputImportWrapper">
+			<div class="input-block">
+				<p><strong>Paste your timings below:</strong></p>
+				<textarea id="input" placeholder="Paste the timing data here..."></textarea>
+				<div class="button-group">
+					<button onclick="parseTimings()">Analyze</button>
+					<button id="loadBtn">Load File</button>
+					<input type="file" id="fileInput" accept=".ctmg" />
+				</div>
+			</div>
+		</div>
+	</center>
+
+	<hr />
+
+	<div id="sampleTime"></div>
+	<table id="resultTable">
+		<thead>
 			<tr>
-				<th>
-					<center>
-						<p>Paste here your timings</p>
-						<textarea id="input"></textarea>
-						<br>
-						<button onclick="parseTimings()">Analyze</button>
-					</center>
-				</th>
+				<th>Event</th>
+				<th>% Total</th>
+				<th>Time ÷ Count</th>
+				<th>Count</th>
 			</tr>
-		</table>
-		
-		<hr>
-		<div id="sampleTime"></div>
-		<table id="resultTable">
-			<thead>
-				<tr>
-					<th>Event</th>
-					<th>% Total</th>
-					<th>Time ÷ Count</th>
-					<th>Count</th>
-				</tr>
-			</thead>
-			<tbody></tbody>
-		</table>
-		<script>
-			function convertNanoseconds(value) {
-				const ns = Number(value);
-				let res = ns;
-				let unit = "μs";
+		</thead>
+		<tbody></tbody>
+	</table>
 
-				if (res > 86400000000.0) {
-					res /= 86400000000.0;
-					unit = "d";
-				} else if (res > 3600000000.0) {
-					res /= 3600000000.0;
-					unit = "h";
-				} else if (res > 60000000.0) {
-					res /= 60000000.0;
-					unit = "m";
-				} else if (res > 1000000.0) {
-					res /= 1000000.0;
-					unit = "s";
-				} else if (res > 1000.0) {
-					res /= 1000.0;
-					unit = "ms";
-				} else {
-					unit = "μs";
-				}
+	<script>
+		function convertNanoseconds(value) {
+			const ns = Number(value);
+			let res = ns;
+			let unit = "μs";
 
-				return `${res.toFixed(2)}${unit}`;
+			if (res > 86400000000.0) {
+				res /= 86400000000.0;
+				unit = "d";
+			} else if (res > 3600000000.0) {
+				res /= 3600000000.0;
+				unit = "h";
+			} else if (res > 60000000.0) {
+				res /= 60000000.0;
+				unit = "m";
+			} else if (res > 1000000.0) {
+				res /= 1000000.0;
+				unit = "s";
+			} else if (res > 1000.0) {
+				res /= 1000.0;
+				unit = "ms";
 			}
-			function parseTimings() {
-				const input = document.getElementById('input').value.trim();
-				const lines = input.split('\n');
-				const tbody = document.querySelector('#resultTable tbody');
-				const sampleDiv = document.getElementById('sampleTime');
-				tbody.innerHTML = '';
-				sampleDiv.textContent = ``;
+			return `${res.toFixed(2)}${unit}`;
+		}
 
-				if (lines.length < 2) {
-					alert('Invalid timings.');
+		function parseTimings() {
+			const input = document.getElementById('input').value.trim();
+			const lines = input.split('\n');
+			const tbody = document.querySelector('#resultTable tbody');
+			const sampleDiv = document.getElementById('sampleTime');
+			tbody.innerHTML = '';
+			sampleDiv.textContent = '';
+
+			if (lines.length < 2) {
+				alert('Invalid timing format: must have at least 2 lines.');
+				return;
+			}
+
+			const sampleLine = lines[0].trim();
+			if (!/^\d+$/.test(sampleLine)) {
+				alert('First line must be a single integer (sample time in nanoseconds).');
+				return;
+			}
+
+			const sampleTime = parseInt(sampleLine);
+			sampleDiv.innerHTML = `<strong>Sample Time:</strong> ${convertNanoseconds(sampleTime)}`;
+
+			for (let i = 1; i < lines.length; i++) {
+				const line = lines[i].trim();
+				if (line.length === 0) continue;
+
+				const parts = line.split(/\s+/);
+				if (parts.length !== 3) {
+					alert(`Invalid format at line ${i + 1}. Expected 3 values.`);
 					return;
 				}
 
-				const sampleTime = parseInt(lines[0]);
-				sampleDiv.innerHTML = `<strong>Sample Time:</strong> ${convertNanoseconds(sampleTime)}`;
+				const [event, totalTimeStr, countStr] = parts;
 
-				for (let i = 1; i < lines.length; i++) {
-					const parts = lines[i].trim().split(/\s+/);
-					if (parts.length === 3) {
-						const event = parts[0];
-						const totalTime = parseInt(parts[1]);
-						const count = parseInt(parts[2]);
-
-						const percent = ((totalTime / sampleTime) * 100).toFixed(2) + '%';
-						const timePerCall = convertNanoseconds(totalTime / count);
-
-						const row = document.createElement('tr');
-
-						[row, percent, timePerCall, count].forEach((val) => {
-							const cell = document.createElement('td');
-							cell.textContent = val;
-							row.appendChild(cell);
-						});
-
-						row.firstChild.textContent = event;
-						tbody.appendChild(row);
-					}
+				if (!/^\d+$/.test(totalTimeStr)) {
+					alert(`Total Time must be an integer on line ${i + 1}.`);
+					return;
 				}
+
+				if (!/^\d+$/.test(countStr)) {
+					alert(`Count must be an integer on line ${i + 1}.`);
+					return;
+				}
+
+				const totalTime = parseInt(totalTimeStr);
+				const count = parseInt(countStr);
+				const percent = ((totalTime / sampleTime) * 100).toFixed(2) + '%';
+				const timePerCall = convertNanoseconds(totalTime / count);
+
+				const row = document.createElement('tr');
+				[event, percent, timePerCall, count].forEach(val => {
+					const cell = document.createElement('td');
+					cell.textContent = val;
+					row.appendChild(cell);
+				});
+				tbody.appendChild(row);
 			}
-		</script>
-	</body>
+		}
+
+		document.getElementById('loadBtn').addEventListener('click', () => {
+			document.getElementById('fileInput').click();
+		});
+
+		document.getElementById('fileInput').addEventListener('change', () => {
+			const fileInput = document.getElementById('fileInput');
+			if (fileInput.files.length === 0) {
+				alert('No file selected.');
+				return;
+			}
+			const reader = new FileReader();
+			reader.onload = function(e) {
+				document.getElementById('input').value = e.target.result;
+				parseTimings();
+			};
+			reader.readAsText(fileInput.files[0]);
+		});
+	</script>
+
 	<footer>
-		<hr>
+		<hr />
 		<h4>~Sunset</h4>
 	</footer>
+</body>
 </html>
-
