@@ -3,28 +3,33 @@
 <head>
 	<meta charset="UTF-8" />
 	<title>C Timings Viewer</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<style>
 		body {
 			font-family: sans-serif;
 			padding: 20px;
-			height: 80%;
 			background-color: #f4f4f4;
+			margin: 0;
 		}
 
 		textarea {
-			width: 400px;
+			width: 100%;
+			max-width: 600px;
 			height: 150px;
 			font-family: monospace;
 			margin-bottom: 20px;
+			resize: vertical;
 		}
 
 		#resultTable {
 			border-collapse: collapse;
 			width: 100%;
 			background-color: white;
+			overflow-x: auto;
 		}
 
-		#resultTable th, #resultTable td {
+		#resultTable th,
+		#resultTable td {
 			border: 1px solid #ccc;
 			padding: 8px;
 			text-align: left;
@@ -40,11 +45,10 @@
 		}
 
 		footer {
-			bottom: 0px;
-			right: 20px;
 			text-align: right;
 			background-color: #f4f4f4;
-			width: calc(100% - 40px);
+			margin-top: 40px;
+			padding: 10px 20px;
 		}
 
 		hr {
@@ -56,6 +60,7 @@
 		#inputImportWrapper {
 			display: flex;
 			justify-content: center;
+			flex-wrap: wrap;
 			margin-bottom: 30px;
 		}
 
@@ -63,12 +68,15 @@
 			display: flex;
 			flex-direction: column;
 			align-items: center;
+			width: 100%;
+			max-width: 600px;
 		}
 
 		.button-group {
 			display: flex;
 			justify-content: center;
 			gap: 10px;
+			flex-wrap: wrap;
 			margin-top: 10px;
 		}
 
@@ -89,6 +97,17 @@
 
 		#fileInput {
 			display: none;
+		}
+
+		@media (max-width: 600px) {
+			.button-group {
+				flex-direction: column;
+				width: 100%;
+			}
+
+			button {
+				width: 100%;
+			}
 		}
 	</style>
 </head>
@@ -111,17 +130,19 @@
 	<hr />
 
 	<div id="sampleTime"></div>
-	<table id="resultTable">
-		<thead>
-			<tr>
-				<th>Event</th>
-				<th>% Total</th>
-				<th>Time ÷ Count</th>
-				<th>Count</th>
-			</tr>
-		</thead>
-		<tbody></tbody>
-	</table>
+	<div style="overflow-x: auto;">
+		<table id="resultTable">
+			<thead>
+				<tr>
+					<th>Event</th>
+					<th>% Total</th>
+					<th>Time ÷ Count</th>
+					<th>Count</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</div>
 
 	<script>
 		function convertNanoseconds(value) {
