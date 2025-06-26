@@ -6,7 +6,7 @@
 /*   By: lroussel <lroussel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/12 20:10:27 by lroussel          #+#    #+#             */
-/*   Updated: 2025/06/25 13:23:25 by lroussel         ###   ########.fr       */
+/*   Updated: 2025/06/26 12:04:04 by lroussel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,9 +31,9 @@ static int	create_log_file(char *dir_path)
 static void	write_timing_data(t_timing *timing, int fd)
 {
 	write(fd, timing->id, ft_strlen(timing->id));
-	write(fd, "\t", 1);
+	write(fd, ",", 1);
 	ft_putnbr_fd(timing->total_time, fd);
-	write(fd, "\t", 1);
+	write(fd, ",", 1);
 	ft_putnbr_fd(timing->called, fd);
 	write(fd, "\n", 1);
 }
