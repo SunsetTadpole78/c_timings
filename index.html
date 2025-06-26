@@ -169,6 +169,36 @@
 			return `${res.toFixed(2)}${unit}`;
 		}
 
+		function getHeatColor(percent) {
+			const p = Math.min(Math.max(percent, 0), 100);
+
+			let r = 255, g = 255, b = 255;
+
+			if (p <= 25) {
+				const t = p / 25;
+				r = 255;
+				g = 255;
+				b = 255 - (t * 102);
+			} else if (p <= 50) {
+				const t = (p - 25) / 25;
+				r = 255;
+				g = 255;
+				b = 153 - (t * 153);
+			} else if (p <= 75) {
+				const t = (p - 50) / 25;
+				r = 255;
+				g = 255 - (t * 102);
+				b = 0;
+			} else {
+				const t = (p - 75) / 25;
+				r = 255;
+				g = 153 - (t * 153);
+				b = 0;
+			}
+
+			return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+		}
+
 		function parseTimings() {
 			const input = document.getElementById('input').value.trim();
 			const lines = input.split('\n');
@@ -215,13 +245,17 @@
 
 				const totalTime = parseInt(totalTimeStr);
 				const count = parseInt(countStr);
-				const percent = ((totalTime / sampleTime) * 100).toFixed(2) + '%';
+				const percentValue = (totalTime / sampleTime) * 100;
+				const percent = percentValue.toFixed(2) + '%';
 				const timePerCall = convertNanoseconds(totalTime / count);
 
 				const row = document.createElement('tr');
-				[event, percent, timePerCall, count].forEach(val => {
+				[event, percent, timePerCall, count].forEach((val, idx) => {
 					const cell = document.createElement('td');
 					cell.textContent = val;
+					if (idx === 1) {
+						cell.style.backgroundColor = getHeatColor(percentValue);
+					}
 					row.appendChild(cell);
 				});
 				tbody.appendChild(row);
