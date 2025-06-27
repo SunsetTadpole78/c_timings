@@ -397,7 +397,7 @@
 					<span>${node.event}</span>
 				</td>
 				<td style="background-color:${getHeatColor(percentValue)}">${percentValue.toFixed(2)}%</td>
-				<td>${convertNanoseconds(timePerCall)}</td>
+				<td style="background-color:${getHeatColor((timePerCall / sampleTime) * 100)}">${convertNanoseconds(timePerCall)}</td>
 				<td>${node.count}</td>
 			`;
 			parentElement.appendChild(row);
