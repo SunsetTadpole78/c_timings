@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
+
 <head>
 	<meta charset="UTF-8" />
-	<title>C Timings Viewer</title>
+	<title>C Timings Viewer - Hierarchical</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<style>
 		body {
@@ -10,15 +11,17 @@
 			padding: 20px;
 			background-color: #f4f4f4;
 			margin: 0;
+			padding-bottom: 105px;
 		}
 
 		textarea {
 			width: 100%;
 			max-width: 600px;
 			height: 150px;
+			max-height: 150px;
 			font-family: monospace;
 			margin-bottom: 20px;
-			resize: vertical;
+			resize: none;
 		}
 
 		#resultTable {
@@ -26,12 +29,33 @@
 			width: 100%;
 			background-color: white;
 			overflow-x: auto;
+			table-layout: fixed;
+		}
+
+		#resultTable th:nth-child(1),
+		#resultTable td:nth-child(1) {
+			width: 60%;
+		}
+
+		#resultTable th:nth-child(2),
+		#resultTable td:nth-child(2) {
+			width: 20%;
+		}
+
+		#resultTable th:nth-child(3),
+		#resultTable td:nth-child(3) {
+			width: 15%;
+		}
+
+		#resultTable th:nth-child(4),
+		#resultTable td:nth-child(4) {
+			width: 5%;
 		}
 
 		#resultTable th,
 		#resultTable td {
 			border: 1px solid #ccc;
-			padding: 8px;
+			padding: 8px 12px;
 			text-align: left;
 			transition: background-color 0.3s;
 		}
@@ -61,6 +85,32 @@
 			font-size: 0.7em;
 		}
 
+		.toggle {
+			cursor: pointer;
+			user-select: none;
+			font-family: monospace;
+			margin-right: 8px;
+			width: 1em;
+			display: inline-block;
+			text-align: center;
+		}
+
+		.toggle.hidden {
+			visibility: hidden;
+		}
+
+		tr.collapsed .toggle::before {
+			content: "►";
+		}
+
+		tr:not(.collapsed) .toggle::before {
+			content: "▼";
+		}
+
+		tr.hidden {
+			display: none;
+		}
+
 		#sampleTime {
 			text-align: center;
 			margin: 10px 0;
@@ -69,8 +119,12 @@
 		footer {
 			text-align: right;
 			background-color: #f4f4f4;
-			margin-top: 40px;
-			padding: 10px 20px;
+			padding-right: 20px;
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			width: 100%;
+			box-sizing: border-box;
 		}
 
 		hr {
@@ -121,6 +175,10 @@
 			display: none;
 		}
 
+		hr {
+			margin-bottom: 0px;
+		}
+
 		@media (max-width: 600px) {
 			.button-group {
 				flex-direction: column;
@@ -133,6 +191,7 @@
 		}
 	</style>
 </head>
+
 <body>
 	<center>
 		<h1>C Timings Viewer</h1>
@@ -143,7 +202,7 @@
 				<div class="button-group">
 					<button onclick="parseTimings()">Analyze</button>
 					<button id="loadBtn">Load File</button>
-					<input type="file" id="fileInput" accept=".ctmg" />
+					<input type="file" id="fileInput" accept=".ctmg,.txt" />
 				</div>
 			</div>
 		</div>
@@ -156,10 +215,10 @@
 		<table id="resultTable">
 			<thead>
 				<tr>
-					<th>Event</th>
-					<th>% Total</th>
-					<th>Time ÷ Count</th>
-					<th>Count</th>
+					<th data-sort-index="0">Event</th>
+					<th data-sort-index="1">% Total</th>
+					<th data-sort-index="2">Time ÷ Count</th>
+					<th data-sort-index="3">Count</th>
 				</tr>
 			</thead>
 			<tbody></tbody>
@@ -169,6 +228,7 @@
 	<script>
 		let currentSortColumn = 0;
 		let currentSortAsc = true;
+		let sampleTime = 0;
 
 		function convertNanoseconds(value) {
 			const ns = Number(value);
@@ -247,121 +307,237 @@
 			}
 
 			const sampleLine = lines[0].trim();
-			if (!/^\d+$/.test(sampleLine)) {
+			if (!/^\d+$/.test(lines[0].trim())) {
 				alert('First line must be a single integer (sample time in nanoseconds).');
 				return;
 			}
 
-			const sampleTime = parseInt(sampleLine);
+			sampleTime = parseInt(sampleLine, 10);
 			sampleDiv.innerHTML = `<strong>Sample Time:</strong> ${convertNanoseconds(sampleTime)}`;
 
-			for (let i = 1; i < lines.length; i++) {
-				const line = lines[i].trim();
-				if (line.length === 0) continue;
+			const dataTree = buildTree(lines.slice(1));
 
-				const parts = line.split(",");
-				if (parts.length !== 3) {
-					alert(`Invalid format at line ${i + 1}. Expected 3 values.`);
-					return;
-				}
-
-				const [event, totalTimeStr, countStr] = parts;
-
-				if (!/^\d+$/.test(totalTimeStr) || !/^\d+$/.test(countStr)) {
-					alert(`Line ${i + 1}: Total Time and Count must be integers.`);
-					return;
-				}
-
-				const totalTime = parseInt(totalTimeStr);
-				const count = parseInt(countStr);
-				const percentValue = (totalTime / sampleTime) * 100;
-				const percent = percentValue.toFixed(2) + '%';
-				const timePerCall = convertNanoseconds(totalTime / count);
-
-				const row = document.createElement('tr');
-				row.innerHTML = `
-					<td>${event}</td>
-					<td style="background-color:${getHeatColor(percentValue)}">${percent}</td>
-					<td>${timePerCall}</td>
-					<td>${count}</td>
-				`;
-				tbody.appendChild(row);
-			}
-
-			sortTableByColumn(0, true);
+			dataTree.forEach(node => renderNode(node, tbody, 'root'));
+			sortTableByColumn(1, 0);
 		}
 
-		function sortTableByColumn(index, forceAsc = null) {
-			const tbody = document.querySelector('#resultTable tbody');
-			const rows = Array.from(tbody.querySelectorAll('tr'));
+		function buildTree(lines) {
+			const tree = [];
+			const parentStack = [];
 
-			if (forceAsc !== null) {
-				currentSortAsc = forceAsc;
-			} else {
-				currentSortAsc = currentSortColumn === index ? !currentSortAsc : index == 0;
-			}
-			currentSortColumn = index;
+			const SPACES_PER_INDENT = 4;
 
-			rows.sort((a, b) => {
-				let aText = a.children[index].textContent;
-				let bText = b.children[index].textContent;
+			lines.forEach((line, index) => {
+				if (line.trim().length === 0) return;
 
-				let aVal, bVal;
-
-				if (index === 1) {
-					aVal = parseFloat(aText.replace('%', ''));
-					bVal = parseFloat(bText.replace('%', ''));
-				} else if (index === 2) {
-					aVal = timeToNs(aText);
-					bVal = timeToNs(bText);
-				} else if (index === 3) {
-					aVal = parseInt(aText);
-					bVal = parseInt(bText);
-				} else {
-					aVal = aText.toLowerCase();
-					bVal = bText.toLowerCase();
+				const leadingWhitespace = line.match(/^\s*/)[0];
+				let indentation = 0;
+				if (leadingWhitespace) {
+					const normalizedWhitespace = leadingWhitespace.replace(/\t/g, ' '.repeat(SPACES_PER_INDENT));
+					indentation = Math.floor(normalizedWhitespace.length / SPACES_PER_INDENT);
 				}
 
-				return (aVal < bVal ? -1 : aVal > bVal ? 1 : 0) * (currentSortAsc ? 1 : -1);
+				const content = line.trim();
+				const parts = content.split(",");
+
+				if (parts.length !== 4) {
+					alert(`Invalid format at line ${index + 1}. Expected 3 values.`);
+					return;
+				}
+
+				const [event, totalTimeStr, countStr, divStr] = parts;
+
+				if (!/^\d+$/.test(totalTimeStr) || !/^\d+$/.test(countStr) || !/^\d+$/.test(divStr)) {
+					alert(`Line ${index + 1}: Total Time, Count and Diviser must be integers.`);
+					return;
+				}
+
+				const node = {
+					id: `row-${Math.random().toString(36).substr(2, 9)}`,
+					event,
+					totalTime: parseInt(totalTimeStr, 10),
+					count: parseInt(countStr, 10),
+					div: parseInt(divStr, 10),
+					level: indentation,
+					children: []
+				};
+
+				while (parentStack.length > indentation) {
+					parentStack.pop();
+				}
+
+				if (indentation === 0) {
+					tree.push(node);
+				} else {
+					const parent = parentStack[indentation - 1];
+					if (parent) {
+						parent.children.push(node);
+					} else {
+						tree.push(node);
+					}
+				}
+				parentStack[indentation] = node;
+			});
+			return tree;
+		}
+
+		function renderNode(node, parentElement, parentId) {
+			const row = document.createElement('tr');
+			row.dataset.id = node.id;
+			row.dataset.parentId = parentId;
+			row.dataset.level = node.level;
+
+			const percentValue = (node.totalTime / sampleTime) * 100;
+			const timePerCall = (node.div > 0) ? (node.totalTime / node.div) : 0;
+
+			row.innerHTML = `
+				<td>
+					<span style="padding-left: ${node.level * 25}px;"></span>
+					<span class="toggle ${node.children.length === 0 ? 'hidden' : ''}"></span>
+					<span>${node.event}</span>
+				</td>
+				<td style="background-color:${getHeatColor(percentValue)}">${percentValue.toFixed(2)}%</td>
+				<td>${convertNanoseconds(timePerCall)}</td>
+				<td>${node.count}</td>
+			`;
+			parentElement.appendChild(row);
+
+			if (node.children.length > 0) {
+				node.children.forEach(child => renderNode(child, parentElement, node.id));
+			}
+		}
+
+		document.querySelector('#resultTable tbody').addEventListener('click', (e) => {
+			if (!e.target.classList.contains('toggle')) return;
+
+			const row = e.target.closest('tr');
+			const rowId = row.dataset.id;
+
+			row.classList.toggle('collapsed');
+			const isCollapsed = row.classList.contains('collapsed');
+
+			toggleChildren(rowId, isCollapsed);
+		});
+
+		function toggleChildren(parentId, hide) {
+			const children = document.querySelectorAll(`#resultTable tbody tr[data-parent-id="${parentId}"]`);
+			children.forEach(child => {
+				child.classList.toggle('hidden', hide);
+				if (hide) {
+					toggleChildren(child.dataset.id, true);
+				} else {
+					if (!child.classList.contains('collapsed')) {
+						toggleChildren(child.dataset.id, false);
+					}
+				}
+			});
+		}
+
+		function sortTableByColumn(index, v = null) {
+			if (index === null) return;
+
+			const tbody = document.querySelector('#resultTable tbody');
+
+			if (v != null)
+				currentSortAsc = v;
+			else
+				currentSortAsc = currentSortColumn === index ? !currentSortAsc : (index === 0);
+			currentSortColumn = index;
+
+			const topLevelNodes = Array.from(tbody.querySelectorAll('tr[data-parent-id="root"]'));
+			sortSiblings(topLevelNodes, index);
+
+			const allParents = Array.from(tbody.querySelectorAll('tr'));
+			allParents.forEach(parent => {
+				const children = Array.from(tbody.querySelectorAll(`tr[data-parent-id="${parent.dataset.id}"]`));
+				if (children.length > 1) {
+					sortSiblings(children, index);
+				}
 			});
 
-			tbody.innerHTML = '';
-			rows.forEach(row => tbody.appendChild(row));
+			updateSortIndicators();
+		}
 
-			document.querySelectorAll('#resultTable th').forEach((th, idx) => {
+		function sortSiblings(rows, colIndex) {
+			const parent = rows[0].parentNode;
+
+			rows.sort((a, b) => {
+				const aCell = a.children[colIndex];
+				const bCell = b.children[colIndex];
+				let aVal = aCell.textContent.trim();
+				let bVal = bCell.textContent.trim();
+
+				if (colIndex === 1) {
+					aVal = parseFloat(aVal.replace('%', ''));
+					bVal = parseFloat(bVal.replace('%', ''));
+				} else if (colIndex === 2) {
+					aVal = timeToNs(aVal);
+					bVal = timeToNs(bVal);
+				} else if (colIndex === 3) {
+					aVal = parseInt(aVal, 10);
+					bVal = parseInt(bVal, 10);
+				} else {
+					aVal = aVal.toLowerCase();
+					bVal = bVal.toLowerCase();
+				}
+
+				const modifier = currentSortAsc ? 1 : -1;
+				if (aVal < bVal) return -1 * modifier;
+				if (aVal > bVal) return 1 * modifier;
+				return 0;
+			});
+
+			rows.forEach(row => {
+				parent.appendChild(row);
+				const descendants = getAllDescendants(row.dataset.id);
+				descendants.forEach(desc => parent.appendChild(desc));
+			});
+		}
+
+		function getAllDescendants(parentId) {
+			let descendants = [];
+			const children = Array.from(document.querySelectorAll(`#resultTable tbody tr[data-parent-id="${parentId}"]`));
+			children.forEach(child => {
+				descendants.push(child);
+				descendants = descendants.concat(getAllDescendants(child.dataset.id));
+			});
+			return descendants;
+		}
+
+		function updateSortIndicators() {
+			document.querySelectorAll('#resultTable th').forEach(th => {
 				th.classList.remove('sorted-asc', 'sorted-desc');
-				if (idx === currentSortColumn) {
+				const thIndex = parseInt(th.dataset.sortIndex, 10);
+				if (thIndex === currentSortColumn) {
 					th.classList.add(currentSortAsc ? 'sorted-asc' : 'sorted-desc');
 				}
 			});
 		}
 
-		document.querySelectorAll('#resultTable th').forEach((th, idx) => {
-			th.addEventListener('click', () => sortTableByColumn(idx));
+		document.querySelectorAll('#resultTable th').forEach(th => {
+			th.addEventListener('click', () => sortTableByColumn(parseInt(th.dataset.sortIndex, 10)));
 		});
 
 		document.getElementById('loadBtn').addEventListener('click', () => {
 			document.getElementById('fileInput').click();
 		});
 
-		document.getElementById('fileInput').addEventListener('change', () => {
-			const fileInput = document.getElementById('fileInput');
-			if (fileInput.files.length === 0) {
-				alert('No file selected.');
+		document.getElementById('fileInput').addEventListener('change', (e) => {
+			if (e.target.files.length === 0)
 				return;
-			}
 			const reader = new FileReader();
-			reader.onload = function(e) {
-				document.getElementById('input').value = e.target.result;
+			reader.onload = function (evt) {
+				document.getElementById('input').value = evt.target.result;
 				parseTimings();
 			};
-			reader.readAsText(fileInput.files[0]);
+			reader.readAsText(e.target.files[0]);
 		});
 	</script>
 
 	<footer>
 		<hr />
-		<h4>~Sunset</h4>
+		<h4>~Sunset · V1.0</h4>
 	</footer>
 </body>
+
 </html>
