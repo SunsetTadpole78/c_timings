@@ -6,7 +6,7 @@
 /*   By: lroussel <lroussel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/23 14:30:44 by lroussel          #+#    #+#             */
-/*   Updated: 2025/05/13 09:54:00 by lroussel         ###   ########.fr       */
+/*   Updated: 2025/06/27 15:13:29 by lroussel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ t_timings	*get_timings(void)
 			return (NULL);
 		timings->timings = NULL;
 		timings->started = ft_timestamp_us();
+		pthread_mutex_init(&timings->mutex, NULL);
 	}
 	return (timings);
 }
@@ -32,9 +33,11 @@ t_session	*start_timing(char *id)
 	t_timings	*timings;
 	t_timing	*cur;
 	t_timing	*timing;
+	t_session	*session;
 
 	if (!is_timings_enabled())
 		return (NULL);
+	pthread_mutex_lock(&get_timings()->mutex);
 	timings = get_timings();
 	cur = timings->timings;
 	timing = NULL;
@@ -47,7 +50,9 @@ t_session	*start_timing(char *id)
 		}
 		cur = cur->next;
 	}
-	return (create_session(&timings->timings, id, timing));
+	session = create_session(&timings->timings, id, timing);
+	pthread_mutex_unlock(&get_timings()->mutex);
+	return (session);
 }
 
 static int	check_sessions(int id, t_session *cur, t_session **prev)
@@ -71,18 +76,20 @@ void	stop_timing(t_session *session)
 	time = ft_timestamp_us();
 	if (session == NULL)
 		return ;
+	pthread_mutex_lock(&get_timings()->mutex);
 	timing = session->timing;
 	prev = NULL;
 	if (!check_sessions(session->id, timing->sessions, &prev))
 	{
 		free(session);
+		pthread_mutex_unlock(&get_timings()->mutex);
 		return ;
 	}
-	timing->called++;
-	timing->total_time += time - session->started;
-	free(session);
+	add_data(&timing->tdata, time - session->started, session->tid);
 	if (prev)
-		prev->next = prev->next->next;
+		prev->next = session->next;
 	else
-		timing->sessions = NULL;
+		timing->sessions = session->next;
+	free(session);
+	pthread_mutex_unlock(&get_timings()->mutex);
 }

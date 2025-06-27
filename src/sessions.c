@@ -6,7 +6,7 @@
 /*   By: lroussel <lroussel@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/13 09:53:10 by lroussel          #+#    #+#             */
-/*   Updated: 2025/05/13 09:55:10 by lroussel         ###   ########.fr       */
+/*   Updated: 2025/06/27 11:30:06 by lroussel         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,8 +20,7 @@ static t_timing	*init_timing(t_timing **timings, char *id)
 	if (!timing)
 		return (NULL);
 	timing->id = ft_strdup(id);
-	timing->total_time = 0l;
-	timing->called = 0;
+	timing->tdata = NULL;
 	timing->sessions = NULL;
 	timing->next = *timings;
 	*timings = timing;
@@ -47,6 +46,7 @@ t_session	*create_session(t_timing **timings, char *id, t_timing *timing)
 		session->id = 0;
 	else
 		session->id = session->next->id + 1;
+	session->tid = pthread_self();
 	timing->sessions = session;
 	session->started = ft_timestamp_us();
 	return (session);
