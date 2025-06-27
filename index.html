@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8" />
-	<title>C Timings Viewer - Hierarchical</title>
+	<title>C Timings Viewer</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<style>
 		body {
@@ -307,7 +307,7 @@
 			}
 
 			const sampleLine = lines[0].trim();
-			if (!/^\d+$/.test(lines[0].trim())) {
+			if (!/^\d+$/.test(sampleLine)) {
 				alert('First line must be a single integer (sample time in nanoseconds).');
 				return;
 			}
@@ -437,26 +437,28 @@
 			if (index === null) return;
 
 			const tbody = document.querySelector('#resultTable tbody');
-
 			if (v != null)
 				currentSortAsc = v;
 			else
 				currentSortAsc = currentSortColumn === index ? !currentSortAsc : (index === 0);
 			currentSortColumn = index;
 
-			const topLevelNodes = Array.from(tbody.querySelectorAll('tr[data-parent-id="root"]'));
-			sortSiblings(topLevelNodes, index);
+			function sortChildren(parentId) {
+				const children = Array.from(tbody.querySelectorAll(`tr[data-parent-id="${parentId}"]`));
+				if (children.length === 0) return;
 
-			const allParents = Array.from(tbody.querySelectorAll('tr'));
-			allParents.forEach(parent => {
-				const children = Array.from(tbody.querySelectorAll(`tr[data-parent-id="${parent.dataset.id}"]`));
-				if (children.length > 1) {
-					sortSiblings(children, index);
-				}
-			});
+				sortSiblings(children, index);
 
+				children.forEach(child => {
+					tbody.appendChild(child);
+					sortChildren(child.dataset.id);
+				});
+			}
+
+			sortChildren("root");
 			updateSortIndicators();
 		}
+
 
 		function sortSiblings(rows, colIndex) {
 			const parent = rows[0].parentNode;
