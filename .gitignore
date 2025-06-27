@@ -2,5 +2,5 @@
 **/*.a
 **/*.sw*
 c_timings.a
-tests/test
+test
 timings

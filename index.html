@@ -117,14 +117,23 @@
 		}
 
 		footer {
-			text-align: right;
 			background-color: #f4f4f4;
-			padding-right: 20px;
+			padding: 10px 20px;
+			padding-top: 0;
 			position: fixed;
 			bottom: 0;
 			left: 0;
 			width: 100%;
 			box-sizing: border-box;
+		}
+
+		.footer-content {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			font-weight: bold;
+			margin-top: 20px;
+			margin-bottom: 10px;
 		}
 
 		hr {
@@ -538,7 +547,10 @@
 
 	<footer>
 		<hr />
-		<h4>~Sunset · V1.0</h4>
+		<div class="footer-content">
+			<span class="footer-left">~Sunset</span>
+			<span class="footer-right">V1.0</span>
+		</div>
 	</footer>
 </body>
 
